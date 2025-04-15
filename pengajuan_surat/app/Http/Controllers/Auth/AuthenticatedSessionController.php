@@ -24,11 +24,39 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        $request->authenticate();
+        // $request->authenticate();
 
-        $request->session()->regenerate();
+        // $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // return redirect()->intended(route('dashboard', absolute: false));
+
+        // Validate the input fields
+        $request->validate([
+            'id' => 'required|string',
+            'password' => 'required|string',
+        ]);
+
+        // Attempt to log the user in using the id and password
+        if (Auth::attempt(['id' => $request->id, 'password' => $request->password])) {
+            // If successful, redirect the user to their intended location
+            $role = Auth::user()->role;
+
+            if ($role === 'admin') {
+                return redirect()->route('admin.dashboard');
+            } elseif ($role === 'kaprodi') {
+                return redirect()->route('kaprodi.dashboard');
+            } elseif ($role === 'mahasiswa') {
+                return redirect()->route('mahasiswa.dashboard');
+            }
+
+            // Fallback redirect if no role matches
+            return redirect()->route('home');
+        }
+
+        // If login fails, redirect back with an error
+        return back()->withErrors([
+            'id' => 'The provided ID and password do not match our records.',
+        ]);
     }
 
     /**
